@@ -32,7 +32,7 @@ resource "google_container_cluster" "primary" {
 }
 
 resource "google_container_node_pool" "spot_nodes" {
-  name       = "${var.cluster_name}-spot-pool"
+  name       = "spot-pool"
   cluster    = google_container_cluster.primary.id
   node_count = 2
   location    = "${var.region}-a"
