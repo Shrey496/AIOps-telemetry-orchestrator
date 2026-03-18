@@ -1,7 +1,7 @@
 #Cretae the GKE Control Plane
 resource "google_container_cluster" "primary" {
     name    = var.cluster_name
-    location    = "{var.region}-a" #Zonal cluster to save on costs
+    location    = "${var.region}-a" #Zonal cluster to save on costs
 
     #Removing default node pool to manage worker nodes independently
     remove_default_node_pool    = true
@@ -35,6 +35,7 @@ resource "google_container_node_pool" "spot_nodes" {
   name       = "${var.cluster_name}-spot-pool"
   cluster    = google_container_cluster.primary.id
   node_count = 2
+  location    = "${var.region}-a"
 
   node_config {
     spot  = true # Enables Spot VMs for cost reduction
