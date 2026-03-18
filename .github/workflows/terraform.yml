@@ -1,5 +1,10 @@
 name: "Terraform Infrastructure Pipeline"
 
+#To ensure that current push to the feature plan takes precedence over the plan that is running currently (avoiding state lock errors)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   workflow_dispatch: # Allows manual trigger from the GitHub UI
   push:
@@ -7,6 +12,11 @@ on:
       - main
     paths:
       - 'terraform/**' # Only runs if Terraform files change
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'terraform/**'
 
 jobs:
   terraform:

@@ -8,7 +8,7 @@ terraform {
   
   # Remote State Backend
   backend "gcs" {
-    bucket = "sh-tf-state-328814" #This bucket was manually created on GCP
+    bucket = "sh-tf-state-328814" #This bucket was manually created on GCP using Cloud shell
     prefix = "terraform/state/dev"
   }
 }
