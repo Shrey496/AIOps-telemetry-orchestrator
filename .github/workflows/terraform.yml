@@ -1,0 +1,47 @@
+name: "Terraform Infrastructure Pipeline"
+
+on:
+  workflow_dispatch: # Allows manual trigger from the GitHub UI
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform/**' # Only runs if Terraform files change
+
+jobs:
+  terraform:
+    name: "Terraform Plan & Apply"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform/environments/dev
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Format Check
+        run: terraform fmt -check
+        continue-on-error: true
+
+      - name: Terraform Plan
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        # Only applies automatically on the main branch. 
+        # If running on a PR, it will only Plan.
+        if: github.ref == 'refs/heads/main' 
+        run: terraform apply -auto-approve tfplan
