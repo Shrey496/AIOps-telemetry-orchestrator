@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mimir-sa
+  namespace: monitoring
+  annotations:
+    iam.gke.io/gcp-service-account: mimir-storage-sa@certain-region-328814.iam.gserviceaccount.com

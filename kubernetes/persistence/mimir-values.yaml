@@ -1,0 +1,13 @@
+#Guiding the Helm chart on the user
+serviceAccount:
+  create: false
+  name: "mimir-sa" #Created with mimir-ksa.yaml
+
+#Tell Mimir application where to put the data
+mimir:
+  structuredConfig:
+    common:
+      storage:
+        backend: gcs
+        gcs:
+          bucket_name: "sh-mimir-metrics-data-328814"
