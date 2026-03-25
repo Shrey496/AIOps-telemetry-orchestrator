@@ -39,7 +39,7 @@ resource "google_container_node_pool" "spot_nodes" {
 
   node_config {
     spot  = true # Enables Spot VMs for cost reduction
-    machine_type = "e2-standard-2" # 2 vCPUs, 8GB RAM 
+    machine_type = "e2-standard-4" # 4 vCPUs, 16GB RAM 
 
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"

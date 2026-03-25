@@ -6,8 +6,46 @@ serviceAccount:
 #Tell Mimir application where to put the data
 mimir:
   structuredConfig:
-    common:
-      storage:
-        backend: gcs
-        gcs:
-          bucket_name: "sh-mimir-metrics-data-328814"
+
+  #Disable Kafka-based ingestion and use Classic Architecture
+    ingest_storage:
+      enabled: false
+    ingester: 
+      push_grpc_method_enabled: true
+
+# Force all storage components to use GCS (overriding default S3)
+    blocks_storage:
+      backend: gcs
+      storage_prefix: "blocks/"
+      gcs:
+        bucket_name: "sh-mimir-metrics-data-328814"
+
+    alertmanager_storage:
+      backend: gcs
+      storage_prefix: "alertmanager/"
+      gcs:
+        bucket_name: "sh-mimir-metrics-data-328814"
+
+    ruler_storage:
+      backend: gcs
+      storage_prefix: "ruler/"
+      gcs:
+        bucket_name: "sh-mimir-metrics-data-328814"
+
+#Disabling the "internal" lab tools
+minio:
+  enabled: false
+kafka:
+  enabled: false
+alertmanager:
+  enabled: true
+
+#Disable the heavy caches from small.yaml
+chunks-cache:
+  enabled: false
+index-cache:
+  enabled: false
+metadata-cache:
+  enabled: false
+results-cache:
+  enabled: false
