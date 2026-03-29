@@ -1,51 +1,89 @@
-#Guiding the Helm chart on the user
+# ==========================================
+# 1. DISABLE ENTERPRISE BLOAT
+# ==========================================
+# By default, Mimir tries to deploy a highly available, enterprise-grade stack.
+# For this project, I disabled the built-in S3/Kafka dependencies and the heavy Memcached layers to save RAM and CPU.
+minio: { enabled: false }
+kafka: { enabled: false }
+chunks-cache: { enabled: false }
+index-cache: { enabled: false }
+metadata-cache: { enabled: false }
+results-cache: { enabled: false }
+
+# ==========================================
+# 2. ARCHITECTURE SCALING & RESOURCE LIMITS
+# ==========================================
+# Bypassed the default 3-zone High Availability setup.
+# By forcing 1 replica and disabling zoneAwareReplication, I prevented the Kubernetes Scheduler from looking for multiple nodes/zones to place PVCs.
+ingester:
+  replicas: 1
+  zones: 1
+  zoneAwareReplication: { enabled: false }
+  # Lowering the 'requests' ensures the K8s scheduler doesn't block the pod 
+  # from starting (fixes the "Pending" state on smaller nodes).
+  resources:
+    requests: { cpu: 100m, memory: 512Mi }
+    limits: { memory: 2Gi }
+
+store_gateway:
+  replicas: 1
+  zones: 1
+  zoneAwareReplication: { enabled: false }
+  resources:
+    requests: { cpu: 100m, memory: 512Mi }
+    limits: { memory: 1Gi }
+
+# Scaling all stateless microservices down to 1 replica with minimal memory requests.
+alertmanager: { replicas: 1, resources: { requests: { cpu: 100m, memory: 256Mi } } }
+compactor: { replicas: 1, resources: { requests: { cpu: 100m, memory: 512Mi } } }
+distributor: { replicas: 1, resources: { requests: { cpu: 100m, memory: 256Mi } } }
+querier: { replicas: 1, resources: { requests: { cpu: 100m, memory: 256Mi } } }
+query_frontend: { replicas: 1, resources: { requests: { cpu: 100m, memory: 256Mi } } }
+query_scheduler: { replicas: 1, resources: { requests: { cpu: 100m, memory: 256Mi } } }
+ruler: { replicas: 1, resources: { requests: { cpu: 100m, memory: 256Mi } } }
+overrides_exporter: { replicas: 1, resources: { requests: { cpu: 100m, memory: 128Mi } } }
+
+# ==========================================
+# 3. GCP WORKLOAD IDENTITY BRIDGE
+# ==========================================
+# Tells Mimir NOT to create a new Kubernetes Service Account.
+# Instead, it uses 'mimir-sa', which I annotated via Terraform to map to a 
+# Google Cloud IAM account with Storage Admin permissions.
 serviceAccount:
   create: false
-  name: "mimir-sa" #Created with mimir-ksa.yaml
+  name: "mimir-sa"
 
-#Tell Mimir application where to put the data
+# ==========================================
+# 4. CORE MIMIR APPLICATION LOGIC
+# ==========================================
 mimir:
   structuredConfig:
+    # Disables multi-tenant authentication (X-Scope-OrgID headers) for easier local testing
+    multitenancy_enabled: false
+    
+    # Prevents the 'Memberlist' protocol (it realizes it is the only node in the ring) from crashing the pod 
+    memberlist:
+      abort_if_cluster_join_fails: false
 
-  #Disable Kafka-based ingestion and use Classic Architecture
+    # Disables local block storage in favor of cloud storage
     ingest_storage:
       enabled: false
-    ingester: 
+    ingester:
       push_grpc_method_enabled: true
-
-# Force all storage components to use GCS (overriding default S3)
+    
+    # Maps Mimir's internal storage engines to the created Google Cloud Storage bucket.
+    # Note: 'storage_prefix' MUST sit outside the 'gcs' block and CANNOT contain trailing slashes.
     blocks_storage:
       backend: gcs
-      storage_prefix: "blocks/"
-      gcs:
-        bucket_name: "sh-mimir-metrics-data-328814"
-
+      storage_prefix: "blocks"
+      gcs: { bucket_name: "sh-mimir-metrics-data-328814" }
+        
     alertmanager_storage:
       backend: gcs
-      storage_prefix: "alertmanager/"
-      gcs:
-        bucket_name: "sh-mimir-metrics-data-328814"
-
+      storage_prefix: "alertmanager"
+      gcs: { bucket_name: "sh-mimir-metrics-data-328814" }
+        
     ruler_storage:
       backend: gcs
-      storage_prefix: "ruler/"
-      gcs:
-        bucket_name: "sh-mimir-metrics-data-328814"
-
-#Disabling the "internal" lab tools
-minio:
-  enabled: false
-kafka:
-  enabled: false
-alertmanager:
-  enabled: true
-
-#Disable the heavy caches from small.yaml
-chunks-cache:
-  enabled: false
-index-cache:
-  enabled: false
-metadata-cache:
-  enabled: false
-results-cache:
-  enabled: false
+      storage_prefix: "ruler"
+      gcs: { bucket_name: "sh-mimir-metrics-data-328814" }
