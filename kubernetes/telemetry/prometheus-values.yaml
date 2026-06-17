@@ -1,0 +1,31 @@
+prometheus:
+  prometheusSpec:
+    # We only keep 2 hours of data locally because Mimir handles long-term storage
+    retention: 2h
+    # Send all metrics to Mimir's Gateway for long-term storage and analysis
+    remoteWrite:
+      - url: http://mimir-gateway.monitoring.svc.cluster.local:80/api/v1/push
+
+grafana:
+  enabled: true
+
+# Whitelist Cloudshell
+  grafana.ini:
+    security:
+      cookie_samesite: lax
+      cookie_secure: false
+      csrf_trusted_origins: "https://*.cloudshell.dev"
+
+  #Tell the sidecar NOT to make local Prometheus the default datasource (less retention)
+  sidecar:
+    datasources:
+      defaultDatasourceEnabled: false
+
+
+  # Automatically wire Grafana up to Mimir
+  additionalDataSources:
+    - name: Mimir
+      type: prometheus
+      url: http://mimir-gateway.monitoring.svc.cluster.local:80/prometheus
+      access: proxy
+      isDefault: true
