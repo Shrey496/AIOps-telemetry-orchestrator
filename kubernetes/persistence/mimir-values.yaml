@@ -61,15 +61,37 @@ mimir:
     # Disables multi-tenant authentication (X-Scope-OrgID headers) for easier local testing
     multitenancy_enabled: false
     
-    # Prevents the 'Memberlist' protocol (it realizes it is the only node in the ring) from crashing the pod 
+    # Global limits override forcing a single-node quorum
+    limits:
+      replication_factor: 1
+    
+    # Prevents the 'Memberlist' protocol from crashing the pod when it realizes it's the only node
     memberlist:
       abort_if_cluster_join_fails: false
 
     # Disables local block storage in favor of cloud storage
     ingest_storage:
       enabled: false
+      
+    # Overriding the rings to expect exactly 1 replica
     ingester:
       push_grpc_method_enabled: true
+      ring:
+        replication_factor: 1
+        zone_awareness_enabled: false
+        
+    store_gateway:
+      ring:
+        replication_factor: 1
+        zone_awareness_enabled: false
+        
+    ruler:
+      ring:
+        replication_factor: 1
+        
+    compactor:
+      ring:
+        replication_factor: 1
     
     # Maps Mimir's internal storage engines to the created Google Cloud Storage bucket.
     # Note: 'storage_prefix' MUST sit outside the 'gcs' block and CANNOT contain trailing slashes.
