@@ -61,11 +61,7 @@ mimir:
     # Disables multi-tenant authentication (X-Scope-OrgID headers) for easier local testing
     multitenancy_enabled: false
     
-    # Global limits override forcing a single-node quorum
-    limits:
-      replication_factor: 1
-    
-    # Prevents the 'Memberlist' protocol from crashing the pod when it realizes it's the only node
+    # Prevents the 'Memberlist' protocol (it realizes it is the only node in the ring) from crashing the pod 
     memberlist:
       abort_if_cluster_join_fails: false
 
@@ -73,7 +69,6 @@ mimir:
     ingest_storage:
       enabled: false
       
-    # Overriding the rings to expect exactly 1 replica
     ingester:
       push_grpc_method_enabled: true
       ring:
@@ -81,16 +76,12 @@ mimir:
         zone_awareness_enabled: false
         
     store_gateway:
-      ring:
+      sharding_ring:
         replication_factor: 1
         zone_awareness_enabled: false
         
-    ruler:
-      ring:
-        replication_factor: 1
-        
     compactor:
-      ring:
+      sharding_ring:
         replication_factor: 1
     
     # Maps Mimir's internal storage engines to the created Google Cloud Storage bucket.
